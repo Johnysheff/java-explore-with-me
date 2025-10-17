@@ -1,14 +1,34 @@
 services:
-  stats-server:
-    ports:
-      - "9090:9090"
-
   stats-db:
     image: postgres:16.1
-
-  ewm-service:
+    container_name: stats-db
+    environment:
+      POSTGRES_DB: stats_db
+      POSTGRES_USER: stats_user
+      POSTGRES_PASSWORD: stats_password
     ports:
-      - "8080:8080"
+      - "5432:5432"
+    volumes:
+      - stats-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U stats_user -d stats_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  ewm-db:
-    image: postgres:16.1
+  stats-server:
+    build:
+      context: .
+      dockerfile: stats/stats-server/Dockerfile
+    ports:
+      - "9090:9090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/stats_db
+      SPRING_DATASOURCE_USERNAME: stats_user
+      SPRING_DATASOURCE_PASSWORD: stats_password
+    depends_on:
+      stats-db:
+        condition: service_healthy
+
+volumes:
+  stats-db-data:
