@@ -1,5 +1,6 @@
 package ru.practicum.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.EndpointHit;
@@ -15,6 +16,7 @@ public class StatsServiceImpl implements StatsService {
 
     private final StatsRepository statsRepository;
 
+    @Transactional
     @Override
     public void saveHit(EndpointHit hit) {
         statsRepository.save(hit);
