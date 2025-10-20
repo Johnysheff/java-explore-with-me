@@ -3,6 +3,7 @@ package ru.practicum.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.EndpointHit;
 import ru.practicum.dto.ViewStats;
@@ -10,6 +11,7 @@ import ru.practicum.service.StatsService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,6 +33,11 @@ public class StatsController {
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
             @RequestParam(required = false) List<String> uris,
             @RequestParam(defaultValue = "false") Boolean unique) {
+
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
+        }
+
         return statsService.getStats(start, end, uris, unique);
     }
 }
