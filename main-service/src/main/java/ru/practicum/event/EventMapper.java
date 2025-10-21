@@ -19,34 +19,29 @@ public class EventMapper {
     private final UserMapper userMapper;
     private final CategoryMapper categoryMapper;
     private final LocationMapper locationMapper;
-    private final EventStatisticsService eventStatisticsService;
 
-    public EventShortDto toEventShortDto(Event event) {
-        Objects.requireNonNull(event, "Событие не может быть пустымм");
-
+    public EventShortDto toEventShortDto(Event event, Long confirmedRequests, Long views) {
         return EventShortDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
                 .category(categoryMapper.toCategoryDto(event.getCategory()))
-                .confirmedRequests(eventStatisticsService.getConfirmedRequestsCount(event.getId()))
+                .confirmedRequests(confirmedRequests)
                 .eventDate(event.getEventDate())
                 .initiator(userMapper.toUserShortDto(event.getInitiator()))
                 .paid(event.getPaid())
                 .title(event.getTitle())
-                .views(eventStatisticsService.getViewsCount(event.getId()))
+                .views(views)
                 .build();
     }
 
-    public EventFullDto toEventFullDto(Event event) {
-        Objects.requireNonNull(event, "Событие не может быть пустым");
-
+    public EventFullDto toEventFullDto(Event event, Long confirmedRequests, Long views) {
         LocationDto locationDto = locationMapper.toLocationDto(event.getLocation());
 
         return EventFullDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
                 .category(categoryMapper.toCategoryDto(event.getCategory()))
-                .confirmedRequests(eventStatisticsService.getConfirmedRequestsCount(event.getId()))
+                .confirmedRequests(confirmedRequests)
                 .createdOn(event.getCreatedOn())
                 .description(event.getDescription())
                 .eventDate(event.getEventDate())
@@ -58,7 +53,7 @@ public class EventMapper {
                 .requestModeration(event.getRequestModeration())
                 .state(event.getState().name())
                 .title(event.getTitle())
-                .views(eventStatisticsService.getViewsCount(event.getId()))
+                .views(views)
                 .build();
     }
 
@@ -73,6 +68,22 @@ public class EventMapper {
                 .participantLimit(newEventDto.getParticipantLimit() != null ? newEventDto.getParticipantLimit() : 0)
                 .requestModeration(newEventDto.getRequestModeration() != null ? newEventDto.getRequestModeration() : true)
                 .title(newEventDto.getTitle())
+                .build();
+    }
+
+    //получаем краткую инфо о событии для подборки
+    public EventShortDto toEventShortDtoForCompilation(Event event) {
+
+        return EventShortDto.builder()
+                .id(event.getId())
+                .annotation(event.getAnnotation())
+                .category(categoryMapper.toCategoryDto(event.getCategory()))
+                .confirmedRequests(0L)
+                .eventDate(event.getEventDate())
+                .initiator(userMapper.toUserShortDto(event.getInitiator()))
+                .paid(event.getPaid())
+                .title(event.getTitle())
+                .views(0L)
                 .build();
     }
 }

@@ -22,7 +22,7 @@ public class CompilationMapper {
 
         List<EventShortDto> eventDtos = compilation.getEvents() != null ?
                 compilation.getEvents().stream()
-                        .map(eventMapper::toEventShortDto)
+                        .map(eventMapper::toEventShortDtoForCompilation)
                         .collect(Collectors.toList()) :
                 Collections.emptyList();
 

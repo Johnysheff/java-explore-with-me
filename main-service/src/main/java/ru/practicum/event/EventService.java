@@ -61,7 +61,12 @@ public class EventService {
         List<Event> events = eventRepository.findAll(spec, pageable).getContent();
 
         return events.stream()
-                .map(eventMapper::toEventFullDto)
+                .map(event -> {
+                    //получаем статистику для каждого события
+                    Long confirmedRequests = requestRepository.countByEventIdAndStatus(event.getId(), RequestStatus.CONFIRMED);
+                    Long views = getEventViews(event.getId());
+                    return eventMapper.toEventFullDto(event, confirmedRequests, views);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -78,7 +83,11 @@ public class EventService {
         }
 
         Event updatedEvent = eventRepository.save(event);
-        return eventMapper.toEventFullDto(updatedEvent);
+
+        //получаем статистику для обновленного события
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(updatedEvent.getId(), RequestStatus.CONFIRMED);
+        Long views = getEventViews(updatedEvent.getId());
+        return eventMapper.toEventFullDto(updatedEvent, confirmedRequests, views);
     }
 
     public List<EventShortDto> getUserEvents(Long userId, Integer from, Integer size) {
@@ -90,7 +99,12 @@ public class EventService {
         List<Event> events = eventRepository.findAllByInitiatorId(userId, pageable).getContent();
 
         return events.stream()
-                .map(eventMapper::toEventShortDto)
+                .map(event -> {
+                    //получаем статистику для каждого события
+                    Long confirmedRequests = requestRepository.countByEventIdAndStatus(event.getId(), RequestStatus.CONFIRMED);
+                    Long views = getEventViews(event.getId());
+                    return eventMapper.toEventShortDto(event, confirmedRequests, views);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -116,14 +130,17 @@ public class EventService {
         setDefaultEventValues(event);
 
         Event savedEvent = eventRepository.save(event);
-        return eventMapper.toEventFullDto(savedEvent);
+        return eventMapper.toEventFullDto(savedEvent, 0L, 0L);
     }
 
     public EventFullDto getUserEvent(Long userId, Long eventId) {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Событие с ID " + eventId + " не найдено у пользователя с ID " + userId));
 
-        return eventMapper.toEventFullDto(event);
+        //получаем статистику для события
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(event.getId(), RequestStatus.CONFIRMED);
+        Long views = getEventViews(event.getId());
+        return eventMapper.toEventFullDto(event, confirmedRequests, views);
     }
 
     @Transactional
@@ -144,7 +161,11 @@ public class EventService {
         }
 
         Event updatedEvent = eventRepository.save(event);
-        return eventMapper.toEventFullDto(updatedEvent);
+
+        //получаем статистику для обновленного события
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(updatedEvent.getId(), RequestStatus.CONFIRMED);
+        Long views = getEventViews(updatedEvent.getId());
+        return eventMapper.toEventFullDto(updatedEvent, confirmedRequests, views);
     }
 
     public List<EventShortDto> getPublicEvents(String text, List<Long> categories, Boolean paid,
@@ -176,11 +197,8 @@ public class EventService {
 
         Long currentViews = getEventViews(id);
         Long newViews = currentViews + 1;
-
-        EventFullDto eventDto = eventMapper.toEventFullDto(event);
-        eventDto.setViews(newViews); // Возвращаем увеличенное значение
-
-        return eventDto;
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(event.getId(), RequestStatus.CONFIRMED);
+        return eventMapper.toEventFullDto(event, confirmedRequests, newViews);
     }
 
     public List<ParticipationRequestDto> getEventRequests(Long userId, Long eventId) {
@@ -303,10 +321,9 @@ public class EventService {
 
         return events.stream()
                 .map(event -> {
-                    EventShortDto dto = eventMapper.toEventShortDto(event);
-                    dto.setConfirmedRequests(confirmedRequests.getOrDefault(event.getId(), 0L));
-                    dto.setViews(views.getOrDefault(event.getId(), 0L));
-                    return dto;
+                    Long eventConfirmedRequests = confirmedRequests.getOrDefault(event.getId(), 0L);
+                    Long eventViews = views.getOrDefault(event.getId(), 0L);
+                    return eventMapper.toEventShortDto(event, eventConfirmedRequests, eventViews);
                 })
                 .sorted(Comparator.comparing(EventShortDto::getViews).reversed())
                 .collect(Collectors.toList());
