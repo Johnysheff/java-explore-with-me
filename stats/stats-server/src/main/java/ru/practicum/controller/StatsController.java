@@ -31,6 +31,11 @@ public class StatsController {
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
             @RequestParam(required = false) List<String> uris,
             @RequestParam(defaultValue = "false") Boolean unique) {
+
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
+        }
+
         return statsService.getStats(start, end, uris, unique);
     }
 }
